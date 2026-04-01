@@ -1,45 +1,48 @@
 # cc-buddy-roller
 
-一个给 Claude Code `/buddy` 命令里的电子宠物用的双语种子工作台。
+```
+  ╭──────────────────────────────────╮
+  │  🎰  CC Buddy Roller  🎰        │
+  │  抽到心仪的那只为止。              │
+  ╰──────────────────────────────────╯
+```
 
-这个仓库采用 guide-first 的命令模型，README 拆成独立中英文文件，CLI 也支持语言切换，适合直接作为 `cc-buddy-roller` 的开源仓库说明。
+> Claude Code 的 `/buddy` 宠物**不是随机的**——它由一个确定性种子生成。只要找到对的种子，你就能拥有任何你想要的宠物。这个工具帮你从几百万个种子里搜出你的"天命之宠"。
 
-## 项目用途
+## 为什么需要这个
 
-`cc-buddy-roller` 用来处理 Claude Code `/buddy` 电子宠物背后的确定性种子。
+在 Claude Code 里敲 `/buddy`，你的宠物的物种、稀有度、帽子、眼睛、闪光状态和属性值，全部由一个种子字符串决定。默认种子是你的 `oauthAccount.accountUuid`——换句话说，你的宠物从注册那一刻就定了。
 
-它可以：
+**cc-buddy-roller** 让你可以：
+- 🔍 按条件搜索能出你想要特征的种子
+- 👀 写入前先预览效果
+- ✍️ 一键写入配置（自动备份，安全无忧）
+- 🌐 中英文界面随意切换
 
-- 查看当前 Claude 配置和当前 buddy 派生结果
-- 在真正写入前先预览任意种子
-- 按特征条件搜索匹配的种子
-- 自动备份后把种子写回配置
-- 通过 `--lang` 在中文和英文界面之间切换
+简单说：**这是一个宠物抽卡器**，但你不用删号重来。
 
 ## 安装
 
-### 一键安装
-
-如果很多用户本机还没有 Bun，推荐直接用安装脚本。它会在需要时自动安装 Bun，把项目源码同步到本地，并生成一个可重复使用的 `cc-buddy-roller` 启动命令。
+### 一键安装（推荐）
 
 ```bash
 curl -fsSL https://github.com/liuxiaopai-ai/cc-buddy-roller/raw/refs/heads/main/install.sh | bash
 cc-buddy-roller guide
 ```
 
-如果当前这个 shell 里还找不到 `cc-buddy-roller`，开一个新终端，或者先执行：
+**系统要求：** 只需要 `bash`、`curl`、`tar`——安装脚本会自动搞定 Bun。
+
+如果装完在当前终端找不到 `cc-buddy-roller`，开个新终端，或者先执行：
 
 ```bash
 export PATH="$HOME/.bun/bin:$HOME/.local/bin:$PATH"
 ```
 
-标准安装路径下，用户不需要预先安装 Bun，也不需要先装 Git。安装脚本会自己安装 Bun，并直接从 GitHub 下载源码包。通常只要系统里有 `bash`、`curl`、`tar` 就够了；大多数 macOS 和 Linux 环境默认都有。
-
-后面想更新本地安装，也可以直接再跑一次这条命令。
+想更新？再跑一遍安装命令就行。
 
 ### 手动安装
 
-需要先安装 [Bun](https://bun.sh)。因为 Claude Code 使用的是 `Bun.hash`，只用 Node.js 无法算出一致的 buddy 特征。
+需要先装 [Bun](https://bun.sh)（不能用 Node.js——Claude Code 内部用的是 `Bun.hash`）。
 
 ```bash
 curl -fsSL https://bun.sh/install | bash
@@ -48,116 +51,129 @@ cd cc-buddy-roller
 bun buddy.mjs guide
 ```
 
-## 命令结构
+## 命令一览
 
-| 命令 | 作用 |
-|---|---|
-| `bun buddy.mjs guide` | 进入交互式向导，选条件、跑搜索、挑结果、决定是否写入 |
-| `bun buddy.mjs hunt [filters]` | 直接按参数搜索种子 |
-| `bun buddy.mjs inspect` | 查看当前配置路径、有效种子字段和当前 buddy |
-| `bun buddy.mjs preview <seed>` | 预览单个种子 |
-| `bun buddy.mjs stamp <seed>` | 先备份，再把种子写入当前有效字段 |
+### `guide` — 交互式抽卡
 
-## 语言支持
-
-CLI 支持：
-
-- `--lang en`
-- `--lang zh`
-- `--lang auto`
-
-示例：
+推荐的入门方式。带你选筛选条件、跑搜索、看结果、决定要不要写入。
 
 ```bash
-bun buddy.mjs guide --lang zh
-bun buddy.mjs inspect --lang en
+cc-buddy-roller guide
 ```
 
-## 使用示例
+### `hunt` — 直接搜
+
+跳过交互，直接按参数搜索。
 
 ```bash
-# 进入向导
-bun buddy.mjs guide
+# 搜一只闪光传说龙
+cc-buddy-roller hunt --species dragon --rarity legendary --shiny
 
-# 搜一个闪光传说龙，并保留两个结果
-bun buddy.mjs hunt --species dragon --rarity legendary --shiny --limit 2
+# 史诗稀有度，所有属性不低于 40
+cc-buddy-roller hunt --rarity epic --stat-floor 40
 
-# 要求所有属性都不低于 40
-bun buddy.mjs hunt --rarity epic --stat-floor 40
+# 保留 5 个结果慢慢挑
+cc-buddy-roller hunt --species cat --rarity rare --limit 5
+```
 
-# 先预览，再决定要不要写
-bun buddy.mjs preview 9ab738bf-fb82-40fb-917d-0020259c8408
+### `inspect` — 看看当前宠物
 
-# 把种子写入当前配置
-bun buddy.mjs stamp f853b71e-3774-4bc7-b4a8-4cc0ed266f9f
+显示你的配置路径、当前种子、以及这个种子对应的宠物。
 
-# 如果你用 install.sh 装过，也可以直接这样跑
-cc-buddy-roller inspect --lang zh
+```bash
+cc-buddy-roller inspect
+```
+
+### `preview` — 先看后买
+
+输入任意种子，看看会出什么宠物，不动你的配置。
+
+```bash
+cc-buddy-roller preview 9ab738bf-fb82-40fb-917d-0020259c8408
+```
+
+### `stamp` — 写入种子
+
+先自动备份你的配置，然后把种子写进去。
+
+```bash
+cc-buddy-roller stamp f853b71e-3774-4bc7-b4a8-4cc0ed266f9f
 ```
 
 ## 搜索参数
 
 | 参数 | 说明 |
 |---|---|
-| `--species <name>` | 指定物种 |
-| `--rarity <tier>` | 指定稀有度 |
-| `--eye <char>` | 指定眼睛样式 |
-| `--hat <name>` | 指定帽子 |
+| `--species <name>` | 指定物种（如 `dragon`、`cat`、`axolotl`） |
+| `--rarity <tier>` | 指定稀有度（`common`、`uncommon`、`rare`、`epic`、`legendary`） |
+| `--eye <char>` | 指定眼睛样式（`·` `✦` `×` `◉` `@` `°`） |
+| `--hat <name>` | 指定帽子（`crown`、`wizard`、`halo` 等） |
 | `--shiny` | 要求闪光 |
-| `--stat-floor <n>` | 要求每项属性都不少于 `n` |
-| `--limit <n>` | 保留多少个结果 |
-| `--tries <n>` | 搜索预算 |
-| `--seed-format <uuid|hex>` | 手动覆盖种子格式 |
+| `--stat-floor <n>` | 每项属性都不低于这个值 |
+| `--limit <n>` | 保留几个结果（默认 1） |
+| `--tries <n>` | 搜索预算——最多试多少个种子 |
+| `--seed-format <uuid\|hex>` | 手动指定种子格式 |
 
-## 配置文件查找顺序
+## 语言切换
 
-工具会依次尝试：
-
-1. `BUDDY_ROLLER_CONFIG`
-2. `CLAUDE_CONFIG_DIR/.claude.json`
-3. `~/.claude.json`
-4. `~/.claude/.claude.json`
-
-## 种子模型
-
-buddy 的特征来自单一字符串种子：
-
-```text
-seed + "friend-2026-401" -> Bun.hash (wyhash) -> SplitMix32 -> traits
+```bash
+cc-buddy-roller guide --lang zh    # 中文
+cc-buddy-roller guide --lang en    # 英文
+cc-buddy-roller guide --lang auto  # 自动检测
 ```
 
-实际读取顺序是：
+## 卡池一览
 
-```text
+| 特征 | 可能的值 |
+|---|---|
+| **物种** | duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, ghost, axolotl, capybara, cactus, robot, rabbit, mushroom, chonk |
+| **稀有度** | common (60%), uncommon (25%), rare (10%), epic (4%), legendary (1%) |
+| **眼睛** | `·` `✦` `×` `◉` `@` `°` |
+| **帽子** | none, crown, tophat, propeller, halo, wizard, beanie, tinyduck |
+| **属性** | DEBUGGING, PATIENCE, CHAOS, WISDOM, SNARK |
+| **闪光** | 有 / 无 |
+
+## 原理
+
+宠物特征是**确定性**的——同一个种子永远出同一只宠物。
+
+```
+seed + "friend-2026-401" → Bun.hash (wyhash) → SplitMix32 伪随机数 → 特征
+```
+
+默认种子来自你的 Claude 配置：
+
+```
 oauthAccount.accountUuid ?? userID ?? "anon"
 ```
 
-只有名字和性格来自 `/buddy hatch` 时的 LLM；物种、稀有度、帽子、眼睛、闪光、属性点数，都由种子确定。
+只有宠物的**名字**和**性格**由 `/buddy hatch` 时的 LLM 生成。物种、稀有度、帽子、眼睛、闪光、属性值——全都是种子决定的。
 
-## 可调特征
+## 配置文件查找顺序
 
-| 特征 | 值 |
+工具按以下顺序查找你的 Claude 配置：
+
+1. `$BUDDY_ROLLER_CONFIG`（环境变量覆盖）
+2. `$CLAUDE_CONFIG_DIR/.claude.json`
+3. `~/.claude.json`
+4. `~/.claude/.claude.json`
+
+## 旧命令兼容
+
+如果你看过早期文档，这些旧命令还能用：
+
+| 旧命令 | 新命令 |
 |---|---|
-| 物种 | duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, ghost, axolotl, capybara, cactus, robot, rabbit, mushroom, chonk |
-| 稀有度 | common, uncommon, rare, epic, legendary |
-| 眼睛 | `·` `✦` `×` `◉` `@` `°` |
-| 帽子 | none, crown, tophat, propeller, halo, wizard, beanie, tinyduck |
-| 属性 | DEBUGGING, PATIENCE, CHAOS, WISDOM, SNARK |
-
-## 兼容别名
-
-文档主推的是新命令结构，不过程序仍兼容一些旧别名：
-
-- `search` -> `hunt`
-- `current` 或 `show` -> `inspect`
-- `check` 或 `peek` -> `preview`
-- `apply` 或 `write` -> `stamp`
+| `search` | `hunt` |
+| `current`、`show` | `inspect` |
+| `check`、`peek` | `preview` |
+| `apply`、`write` | `stamp` |
 
 ## 注意事项
 
-- Claude Code 在认证刷新时可能会重写 `oauthAccount.accountUuid`，buddy 可能因此恢复原样。
-- 这里的派生逻辑基于 Claude Code 2.1.89 的行为；如果 Anthropic 以后改了盐值或生成流程，结果也会跟着变。
-- `stamp` 在修改配置前一定会生成带时间戳的备份文件。
+- Claude Code 在认证刷新时可能重写 `oauthAccount.accountUuid`，宠物会恢复原样。再 `stamp` 一次就好。
+- 派生逻辑基于 Claude Code **2.1.89**。如果 Anthropic 改了盐值或生成流程，结果会变。
+- `stamp` 在动你的配置之前，一定会先生成带时间戳的备份。
 
 ## License
 
